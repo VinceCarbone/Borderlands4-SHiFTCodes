@@ -12,6 +12,12 @@ Param(
 
 $ShiftCodes = @()
 
+if (Test-Path 'Borderlands4 SHiFT Codes.csv'){
+    $CSVImport = Import-Csv 'Borderlands4 SHiFT Codes.csv'
+} else {
+    $CSVImport = $null
+}
+
 #mentalmars
 Try{
     $response = Invoke-RestMethod -Uri 'https://mentalmars.com/game-news/borderlands-4-shift-codes/' -ErrorAction Stop
@@ -39,6 +45,7 @@ If($null -ne $response){
             If($ShiftCodes.shiftcode -notcontains $code){
                 $ShiftCodes += @(
                     [PSCustomObject]@{
+                        Added = Get-Date -Format MM/dd/yyyy
                         SHiFTCode = $code
                         Reward = ($line -split "</strong>")[0]
                         Expiration = $Expiration
@@ -73,6 +80,7 @@ If($null -ne $response){
             If($ShiftCodes.shiftcode -notcontains $response[$i]){
                 $ShiftCodes += @(
                     [PSCustomObject]@{
+                        Added = Get-Date -Format MM/dd/yyyy
                         SHiFTCode = $response[$i]
                         Reward = $response[$i+1] -replace ":"
                         Expiration = $Expiration
@@ -109,6 +117,7 @@ If($null -ne $response){
             If($ShiftCodes.shiftcode -notcontains $code){
                 $ShiftCodes += @(
                     [PSCustomObject]@{
+                        Added = Get-Date -Format MM/dd/yyyy
                         SHiFTCode = $code
                         Reward =  (((($ShiftCodeLine -split "</strong>")[1]) -split "</td><td>")[1]) -replace "<br>", " "
                         Expiration = $Expiration
@@ -120,14 +129,18 @@ If($null -ne $response){
     }
 }
 
-$Output = $ShiftCodes | Where-Object {$_.expiration -gt (get-date) -or $_.expiration -eq ''} | sort-object shiftcode -Unique | sort-object expiration
+$Output = $ShiftCodes | Where-Object {$_.expiration -gt (get-date) -or $_.expiration -eq ''} | sort-object shiftcode -Unique | sort-object Added, Expiration
 
 if ($ExportCSV){
     $Output | Export-Csv -Path "Borderlands4 SHiFT Codes.csv" -NoTypeInformation -Force
+    
     If($git){
-        & git add -A
-        & git commit -m "SHiFT code update $(get-date -format MM/dd/yyyy)"
-        & git push
+        # If the current array of SHiFT codes is different than the CSV file then update git with the latest codes
+        If(-not($output -ceq $CSVImport)){
+            & git add -A
+            & git commit -m "SHiFT code update $(get-date -format MM/dd/yyyy)"
+            & git push
+        }
     }
 } else {
     $Output | Format-Table -AutoSize
