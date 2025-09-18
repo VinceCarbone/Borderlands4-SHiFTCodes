@@ -1,3 +1,15 @@
+Param(
+    # Parameter help description
+    [Parameter(Mandatory=$false)]
+    [Switch]
+    $ExportCSV,
+
+    [Parameter(Mandatory=$false)]
+    [Switch]
+    $git
+)
+
+
 $ShiftCodes = @()
 
 #mentalmars
@@ -108,8 +120,15 @@ If($null -ne $response){
     }
 }
 
-$ShiftCodes | Where-Object {$_.expiration -gt (get-date) -or $_.expiration -eq ''} | sort-object shiftcode -Unique | sort-object expiration | Export-Csv -Path "Borderlands4 SHiFT Codes.csv" -NoTypeInformation -Force
+$Output = $ShiftCodes | Where-Object {$_.expiration -gt (get-date) -or $_.expiration -eq ''} | sort-object shiftcode -Unique | sort-object expiration
 
-& git add -A
-& git commit -m "SHiFT code update $(get-date -format MM/dd/yyyy)"
-& git push
+if ($ExportCSV){
+    $Output | Export-Csv -Path "Borderlands4 SHiFT Codes.csv" -NoTypeInformation -Force
+    If($git){
+        & git add -A
+        & git commit -m "SHiFT code update $(get-date -format MM/dd/yyyy)"
+        & git push
+    }
+} else {
+    $Output | Format-Table -AutoSize
+}
