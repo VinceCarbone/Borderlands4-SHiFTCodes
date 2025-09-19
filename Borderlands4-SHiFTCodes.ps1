@@ -11,6 +11,7 @@ Param(
 
 
 $ShiftCodes = @()
+$ValidCodes = @()
 
 if (Test-Path 'Borderlands4 SHiFT Codes.csv'){
     $CSVImport = Import-Csv 'Borderlands4 SHiFT Codes.csv'
@@ -131,17 +132,27 @@ If($null -ne $response){
 
 $Output = $ShiftCodes | Where-Object {$_.expiration -gt (get-date) -or $_.expiration -eq ''} | sort-object shiftcode -Unique | sort-object Added, Expiration
 
+# Comapres the results it scraped from the web to what's already in the CSV
+ForEach($code in $output){
+    if ($CSVImport.shiftcode -notcontains $code.shiftcode){
+        $validCodes += $code
+    } else {
+        $validCodes += $CSVImport | Where-Object shiftcode -eq $code.SHiFTCode
+    }
+}
+
+$ValidCodes = $ValidCodes |  Where-Object {$_.expiration -gt (get-date) -or $_.expiration -eq ''} | Sort-Object added, expiration -Descending
+
 if ($ExportCSV){
-    $Output | Export-Csv -Path "Borderlands4 SHiFT Codes.csv" -NoTypeInformation -Force
-    
-    If($git){
-        # If the current array of SHiFT codes is different than the CSV file then update git with the latest codes
-        If(-not($output -ceq $CSVImport)){
+    if (-not($ValidCodes -ceq $CSVImport)){
+        $ValidCodes | Export-Csv -Path "Borderlands4 SHiFT Codes.csv" -NoTypeInformation -Force
+
+        if ($git){
             & git add -A
             & git commit -m "SHiFT code update $(get-date -format MM/dd/yyyy)"
             & git push
         }
     }
 } else {
-    $Output | Format-Table -AutoSize
+    $ValidCodes | Format-Table -AutoSize
 }
