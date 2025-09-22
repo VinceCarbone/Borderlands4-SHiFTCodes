@@ -1,17 +1,22 @@
 Param(
-    # Parameter help description
+
     [Parameter(Mandatory=$false)]
     [Switch]
     $ExportCSV,
+
+    [Parameter(Mandatory=$false)]
+    [string]
+    $DiscordWebhook,
 
     [Parameter(Mandatory=$false)]
     [Switch]
     $git
 )
 
-
 $ShiftCodes = @()
 $ValidCodes = @()
+$NewCodes = @()
+$DiscordMessage = $null
 
 if (Test-Path 'Borderlands4 SHiFT Codes.csv'){
     $CSVImport = Import-Csv 'Borderlands4 SHiFT Codes.csv'
@@ -136,6 +141,7 @@ $Output = $ShiftCodes | Where-Object {$_.expiration -gt ((get-date).adddays(-1))
 ForEach($code in $output){
     if ($CSVImport.shiftcode -notcontains $code.shiftcode){
         $validCodes += $code
+        $NewCodes += $code
     } else {
         $validCodes += $CSVImport | Where-Object shiftcode -eq $code.SHiFTCode
     }
@@ -146,6 +152,21 @@ $ValidCodes = $ValidCodes |  Where-Object {$_.expiration -gt ((get-date).adddays
 if ($ExportCSV){
     if (-not($ValidCodes -ceq $CSVImport)){
         $ValidCodes | Export-Csv -Path "Borderlands4 SHiFT Codes.csv" -NoTypeInformation -Force
+
+        If ($DiscordWebhook){
+            ForEach($NewCode in $NewCodes){
+
+$DiscordMessage = @"
+$($NewCode.SHiFTCode)
+"@            
+                $payload = [PSCustomObject]@{content = $DiscordMessage}                
+                Try{
+                    Invoke-RestMethod -Uri $DiscordWebhook -Method Post -Body ($payload | ConvertTo-Json) -ContentType 'Application/Json' -ErrorAction Stop
+                } catch {
+                    Write-Host "Failed to send to Discord webhook"
+                }
+            }
+        }
 
         if ($git){
             & git add -A
