@@ -36,7 +36,7 @@ If($null -ne $response){
             }
             
             Try{
-                $Expiration = get-date(((($line -split "</strong>")[1] -split "<code>")[0] -replace "expires: ") -replace "sept","september") -ErrorAction Stop -format MM/dd/yyyy
+                $Expiration = get-date(((($line -split "</strong>")[1] -split "<code>")[0] -replace "expires: ") -replace "jan","january" -replace "feb","february" -replace "mar","march" -replace "apr","april" -replace "jun","june" -replace "jul","july" -replace "aug","august" -replace "sept","september" -replace "oct","october" -replace "nov","november" -replace "dec","december") -ErrorAction Stop -format MM/dd/yyyy
             } catch {
                 $Expiration = ''
             }
@@ -102,7 +102,7 @@ Try{
 }
 
 If($null -ne $response){
-    $shiftcodelines = (((($response -match '<figure class="wp-block-table"><table><thead><tr><th>SHiFT Code') -split '</tr>') -match '<tr><td><strong>') -split '</thead><tbody>') -match '.*([A-Z0-9]+-){3}[A-Z0-9]+.*'
+    $shiftcodelines = ((((($response -match '<figure class="wp-block-table"><table><thead><tr><th>SHiFT Code') -split '</tr>') -match '<tr><td><strong>') -split '</thead><tbody>') -match '.*([A-Z0-9]+-){3}[A-Z0-9]+.*') -replace "<strong><strong>","<strong>"
 
     ForEach($shiftcodeline in $shiftcodelines){
 
@@ -130,7 +130,7 @@ If($null -ne $response){
     }
 }
 
-$Output = $ShiftCodes | Where-Object {$_.expiration -gt (get-date) -or $_.expiration -eq ''} | sort-object shiftcode -Unique | sort-object Added, Expiration
+$Output = $ShiftCodes | Where-Object {$_.expiration -gt ((get-date).adddays(-1)) -or $_.expiration -eq ''} | sort-object shiftcode -Unique | sort-object Added, Expiration
 
 # Comapres the results it scraped from the web to what's already in the CSV
 ForEach($code in $output){
@@ -141,7 +141,7 @@ ForEach($code in $output){
     }
 }
 
-$ValidCodes = $ValidCodes |  Where-Object {$_.expiration -gt (get-date) -or $_.expiration -eq ''} | Sort-Object added, expiration -Descending
+$ValidCodes = $ValidCodes |  Where-Object {$_.expiration -gt ((get-date).adddays(-1)) -or $_.expiration -eq ''} | Sort-Object added, expiration -Descending
 
 if ($ExportCSV){
     if (-not($ValidCodes -ceq $CSVImport)){
