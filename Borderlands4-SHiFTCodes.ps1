@@ -52,7 +52,7 @@ If($null -ne $response){
                 $ShiftCodes += @(
                     [PSCustomObject]@{
                         Added = Get-Date -Format MM/dd/yyyy
-                        SHiFTCode = $code
+                        SHiFTCode = $code.trim()
                         Reward = ($line -split "</strong>")[0]
                         Expiration = $Expiration
                         Source = "mentalmars.com"
@@ -87,7 +87,7 @@ If($null -ne $response){
                 $ShiftCodes += @(
                     [PSCustomObject]@{
                         Added = Get-Date -Format MM/dd/yyyy
-                        SHiFTCode = $response[$i]
+                        SHiFTCode = ($response[$i]).trim()
                         Reward = $response[$i+1] -replace ":"
                         Expiration = $Expiration
                         Source = "gaming.news"
@@ -124,7 +124,7 @@ If($null -ne $response){
                 $ShiftCodes += @(
                     [PSCustomObject]@{
                         Added = Get-Date -Format MM/dd/yyyy
-                        SHiFTCode = $code
+                        SHiFTCode = $code.trim()
                         Reward =  (((($ShiftCodeLine -split "</strong>")[1]) -split "</td><td>")[1]) -replace "<br>", " "
                         Expiration = $Expiration
                         Source = "thegamepost.com"
@@ -150,30 +150,32 @@ ForEach($code in $output){
 $ValidCodes = $ValidCodes |  Where-Object {$_.expiration -gt ((get-date).adddays(-1)) -or $_.expiration -eq ''} | Sort-Object added, expiration -Descending
 
 if ($ExportCSV){
-    if (-not($ValidCodes -ceq $CSVImport)){
-        $ValidCodes | Export-Csv -Path "Borderlands4 SHiFT Codes.csv" -NoTypeInformation -Force
+    If($null -ne $ValidCodes){
+        if (-not($ValidCodes -ceq $CSVImport)){
+            $ValidCodes | Export-Csv -Path "Borderlands4 SHiFT Codes.csv" -NoTypeInformation -Force
 
-        If ($DiscordWebhook){
-            ForEach($NewCode in $NewCodes){
+            If ($DiscordWebhook){
+                ForEach($NewCode in $NewCodes){
 
 $DiscordMessage = @"
 $($NewCode.SHiFTCode)
 "@            
-                $payload = [PSCustomObject]@{content = $DiscordMessage}                
-                Try{
-                    Invoke-RestMethod -Uri $DiscordWebhook -Method Post -Body ($payload | ConvertTo-Json) -ContentType 'Application/Json' -ErrorAction Stop
-                } catch {
-                    Write-Host "Failed to send to Discord webhook"
+                    $payload = [PSCustomObject]@{content = $DiscordMessage}                
+                    Try{
+                        Invoke-RestMethod -Uri "$DiscordWebhook" -Method Post -Body ($payload | ConvertTo-Json) -ContentType 'Application/Json' -ErrorAction Stop
+                    } catch {
+                        Write-Host "Failed to send to Discord webhook"
+                    }
                 }
             }
-        }
 
-        if ($git){
-            & git add -A
-            & git commit -m "SHiFT code update $(get-date -format MM/dd/yyyy)"
-            & git push
+            if ($git){
+                & git add -A
+                & git commit -m "SHiFT code update $(get-date -format MM/dd/yyyy)"
+                & git push
+            }
         }
     }
 } else {
-    $ValidCodes | Format-Table -AutoSize
+    $ValidCodes | Sort-Object Added, Expiration -Descending | Format-Table -AutoSize
 }
