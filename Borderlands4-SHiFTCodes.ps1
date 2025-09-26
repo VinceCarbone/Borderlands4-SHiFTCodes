@@ -107,13 +107,12 @@ Try{
 }
 
 If($null -ne $response){
-    $shiftcodelines = ((((($response -match '<figure class="wp-block-table"><table><thead><tr><th>SHiFT Code') -split '</tr>') -match '<tr><td><strong>') -split '</thead><tbody>') -match '.*([A-Z0-9]+-){3}[A-Z0-9]+.*') -replace "<strong><strong>","<strong>"
+    $shiftcodelines = ((((($response -match '<figure class="wp-block-table"><table><thead><tr><th>SHiFT Code') -split '</tr>') -match '<tr><td><strong>') -split '</thead><tbody>') -match '.*([A-Z0-9]+-){3}[A-Z0-9]+.*') -replace "<strong><strong>","<strong>" -replace '&nbsp;' -replace "`n" -replace "`r"
 
     ForEach($shiftcodeline in $shiftcodelines){
 
         If($shiftcodeline -ne ""){
-
-            $Expiration = (((((($ShiftCodeLine -split "</strong>")[1]) -split "</td><td>")[3] -replace "</td>") -replace "sept","september") -split '(st|nd|rd|th)')[0]
+            $Expiration = (((((($ShiftCodeLine -split "</strong>")[-1]) -split "</td><td>")[3] -replace "</td>") -replace "sept","september") -split '(st|nd|rd|th)')[0]
             If($Expiration -ne ''){
                 $Expiration = Get-Date($Expiration) -Format MM/dd/yyyy
             }
@@ -124,8 +123,8 @@ If($null -ne $response){
                 $ShiftCodes += @(
                     [PSCustomObject]@{
                         Added = Get-Date -Format MM/dd/yyyy
-                        SHiFTCode = $code.trim() -replace '&nbsp;'
-                        Reward =  (((($ShiftCodeLine -split "</strong>")[1]) -split "</td><td>")[1]) -replace "<br>", " "
+                        SHiFTCode = $code.trim()
+                        Reward =  (((($ShiftCodeLine -split "</strong>")[-1]) -split "</td><td>")[1]) -replace "<br>", " "
                         Expiration = $Expiration
                         Source = "thegamepost.com"
                     }
@@ -154,7 +153,7 @@ if ($ExportCSV){
         if (-not($ValidCodes -ceq $CSVImport)){
             $ValidCodes | Export-Csv -Path "Borderlands4 SHiFT Codes.csv" -NoTypeInformation -Force
 
-            If ($DiscordWebhook){
+            if ($null -ne $DiscordWebhook){
                 ForEach($NewCode in $NewCodes){
 
 $DiscordMessage = @"
