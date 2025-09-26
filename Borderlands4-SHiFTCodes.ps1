@@ -124,7 +124,7 @@ If($null -ne $response){
                 $ShiftCodes += @(
                     [PSCustomObject]@{
                         Added = Get-Date -Format MM/dd/yyyy
-                        SHiFTCode = $code.trim()
+                        SHiFTCode = $code.trim() -replace '&nbsp;'
                         Reward =  (((($ShiftCodeLine -split "</strong>")[1]) -split "</td><td>")[1]) -replace "<br>", " "
                         Expiration = $Expiration
                         Source = "thegamepost.com"
