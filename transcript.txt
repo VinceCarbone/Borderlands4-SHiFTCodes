@@ -1,12 +1,12 @@
 ﻿**********************
 Windows PowerShell transcript start
-Start time: 20250926043003
+Start time: 20250926053010
 Username: DESKTOP-V0CBBQ9\Vince
 RunAs User: DESKTOP-V0CBBQ9\Vince
 Configuration Name: 
 Machine: DESKTOP-V0CBBQ9 (Microsoft Windows NT 10.0.26100.0)
 Host Application: powershell.exe -file Borderlands4-SHiFTCodes.ps1 -exportcsv -git -discordwebhook 'https://discordapp.com/api/webhooks/1419415532435931186/plLLW2qmtC4AqknuOUAEfX3w4entcibeKMnOqTlj5GaX4uQn5KvqmBa09Dzmb1yBlXQ-'
-Process ID: 35652
+Process ID: 3704
 PSVersion: 5.1.26100.6584
 PSEdition: Desktop
 PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1.26100.6584
@@ -20,5 +20,5 @@ Transcript started, output file is F:\PowerShell\GitRepos\Borderlands4-SHiFTCode
 Sending to 'https://discordapp.com/api/webhooks/1419415532435931186/plLLW2qmtC4AqknuOUAEfX3w4entcibeKMnOqTlj5GaX4uQn5KvqmBa09Dzmb1yBlXQ-'
 **********************
 Windows PowerShell transcript end
-End time: 20250926043003
+End time: 20250926053010
 **********************
