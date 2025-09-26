@@ -154,6 +154,8 @@ if ($ExportCSV){
             $ValidCodes | Export-Csv -Path "Borderlands4 SHiFT Codes.csv" -NoTypeInformation -Force
 
             if ($null -ne $DiscordWebhook){
+                Start-Transcript -Path "$PSScriptRoot\transcript.txt"
+                write-host "Sending to $DiscordWebhook"
                 ForEach($NewCode in $NewCodes){
 
 $DiscordMessage = @"
@@ -166,6 +168,7 @@ $($NewCode.SHiFTCode)
                         Write-Host "Failed to send to Discord webhook"
                     }
                 }
+                Stop-Transcript
             }
 
             if ($git){
