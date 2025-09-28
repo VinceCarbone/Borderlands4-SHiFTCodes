@@ -172,7 +172,7 @@ $($NewCode.SHiFTCode)
             }
 
             if ($git){
-                & git add -A
+                & git add "Borderlands4 SHiFT Codes.csv"
                 & git commit -m "SHiFT code update $(get-date -format MM/dd/yyyy)"
                 & git push
             }
