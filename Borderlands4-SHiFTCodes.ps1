@@ -17,6 +17,7 @@ $ShiftCodes = @()
 $ValidCodes = @()
 $NewCodes = @()
 $DiscordMessage = $null
+$pattern = '\b[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}\b'
 
 if (Test-Path 'Borderlands4 SHiFT Codes.csv'){
     $CSVImport = Import-Csv 'Borderlands4 SHiFT Codes.csv'
@@ -34,30 +35,28 @@ Try{
 If($null -ne $response){
     $shiftcodelines = ((($response -split "`n") -like "*reward*expire date*") -split "<strong>") -replace '</td><td class="has-text-align-left" data-align="left">'
     $i = 0
-    ForEach($line in $shiftcodelines){    
-        If($line -like "*golden key*"){
-            If($line -like "*<br>*"){
-                $line = $shiftcodelines[$i] + $shiftcodelines[$i+1]            
-            }
+    ForEach($line in $shiftcodelines){        
+        If($line -match $pattern){
             
-            Try{
-                $Expiration = get-date(((($line -split "</strong>")[1] -split "<code>")[0] -replace "expires: ") -replace "jan","january" -replace "feb","february" -replace "mar","march" -replace "apr","april" -replace "jun","june" -replace "jul","july" -replace "aug","august" -replace "sept","september" -replace "oct","october" -replace "nov","november" -replace "dec","december") -ErrorAction Stop -format MM/dd/yyyy
+            Try{                
+                $Expiration = get-date(((((($line -split "</strong>")[1] -split "<code>")[0]) -split ";")[-1] -replace "expires: ") -replace "jan","january" -replace "feb","february" -replace "mar","march" -replace "apr","april" -replace "jun","june" -replace "jul","july" -replace "aug","august" -replace "sept","september" -replace "oct","october" -replace "nov","november" -replace "dec","december") -ErrorAction Stop -format MM/dd/yyyy
             } catch {
                 $Expiration = ''
             }
             
             $code = ((($line -split "<code>")[1]) -split "</code>")[0]
-
-            If($ShiftCodes.shiftcode -notcontains $code){
-                $ShiftCodes += @(
-                    [PSCustomObject]@{
-                        Added = Get-Date -Format MM/dd/yyyy
-                        SHiFTCode = $code.trim()
-                        Reward = ($line -split "</strong>")[0]
-                        Expiration = $Expiration
-                        Source = "mentalmars.com"
-                    }
-                )
+            if ($code -notlike "<s>*"){
+                If($ShiftCodes.shiftcode -notcontains $code){
+                    $ShiftCodes += @(
+                        [PSCustomObject]@{
+                            Added = Get-Date -Format MM/dd/yyyy
+                            SHiFTCode = $code.trim()
+                            Reward = ($line -split "</strong>")[0]
+                            Expiration = $Expiration
+                            Source = "mentalmars.com"
+                        }
+                    )
+                }
             }
         }
         $i++
@@ -74,7 +73,7 @@ Try{
 If($null -ne $response){
     $i = 0
     ForEach($line in $response){    
-        If($line -match '([A-Z0-9]+-){3}[A-Z0-9]+$'){
+        If($line -match $pattern){
             $Expiration = $response[$i+2]
 
             If($Expiration -ne 'No information'){
