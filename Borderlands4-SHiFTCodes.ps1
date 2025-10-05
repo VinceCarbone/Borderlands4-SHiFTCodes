@@ -19,10 +19,17 @@ $NewCodes = @()
 $DiscordMessage = $null
 $pattern = '\b[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}\b'
 
-if (Test-Path 'Borderlands4 SHiFT Codes.csv'){
-    $CSVImport = Import-Csv 'Borderlands4 SHiFT Codes.csv'
+if (Test-Path "$PSScriptRoot\Borderlands4 SHiFT Codes.csv"){
+    $CSVImport = Import-Csv "$PSScriptRoot\Borderlands4 SHiFT Codes.csv"
 } else {
     $CSVImport = $null
+}
+
+# expired codes
+if (Test-Path "$PSScriptRoot\ExpiredSHiFTCodes.csv"){
+    $ExpiredCodes = Import-Csv -Path "$PSScriptRoot\ExpiredSHiFTCodes.csv"
+} else {
+    $ExpiredCodes = $null
 }
 
 #mentalmars
@@ -135,22 +142,42 @@ If($null -ne $response){
 
 $Output = $ShiftCodes | Where-Object {$_.expiration -gt ((get-date).adddays(-1)) -or $_.expiration -eq ''} | sort-object shiftcode -Unique | sort-object Added, Expiration
 
-# Comapres the results it scraped from the web to what's already in the CSV
-ForEach($code in $output){
-    if ($CSVImport.shiftcode -notcontains $code.shiftcode){
-        $validCodes += $code
-        $NewCodes += $code
+# finds expired codes, and adds newly expired ones to the expired csv file before re-importing it
+$OutputExpired = $ShiftCodes | Where-Object {$_.expiration -ne '' -and $_.expiration -lt ((get-date).adddays(-1))} | sort-object shiftcode -Unique | sort-object Added, Expiration
+
+if ($ExportCSV){
+    ForEach($ExpiredCode in $OutputExpired){
+        if ($ExpiredCodes.SHiFTCode -notcontains $ExpiredCode.SHiFTCode){
+            $ExpiredCode | Export-Csv -Path "$PSScriptRoot\ExpiredSHiFTCodes.csv" -Append -NoTypeInformation -Force
+        }
+    }
+
+    if (Test-Path "$PSScriptRoot\ExpiredSHiFTCodes.csv"){
+        $ExpiredCodes = Import-Csv -Path "$PSScriptRoot\ExpiredSHiFTCodes.csv"
     } else {
-        $validCodes += $CSVImport | Where-Object shiftcode -eq $code.SHiFTCode
+        $ExpiredCodes = $null
     }
 }
 
-$ValidCodes = $ValidCodes |  Where-Object {$_.expiration -gt ((get-date).adddays(-1)) -or $_.expiration -eq ''} | Sort-Object added, expiration -Descending
+# Comapres the results it scraped from the web to what's already in the CSV files
+ForEach($code in $output){
+    if ($ExpiredCodes.SHiFTCode -notcontains $code.shiftcode){ # this prevents erroneously adding codes back that have already expired (as websites seem to have inconsistencies with dates)
+        if ($CSVImport.shiftcode -notcontains $code.shiftcode){
+            $validCodes += $code
+            $NewCodes += $code
+        } else {
+            $validCodes += $CSVImport | Where-Object shiftcode -eq $code.SHiFTCode
+        }
+    }
+}
+
+#$ValidCodes = $ValidCodes |  Where-Object {$_.expiration -gt ((get-date).adddays(-2)) -or $_.expiration -eq ''} | Sort-Object added, expiration -Descending
+$ValidCodes = $ValidCodes |  Sort-Object added, expiration -Descending
 
 if ($ExportCSV){
     If($null -ne $ValidCodes){
         if (-not($ValidCodes -ceq $CSVImport)){
-            $ValidCodes | Export-Csv -Path "Borderlands4 SHiFT Codes.csv" -NoTypeInformation -Force
+            $ValidCodes | Export-Csv -Path "$PSScriptRoot\Borderlands4 SHiFT Codes.csv" -NoTypeInformation -Force
 
             if ($null -ne $DiscordWebhook){
                 Start-Transcript -Path "..\transcript.txt"
