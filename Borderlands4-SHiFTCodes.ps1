@@ -113,12 +113,15 @@ Try{
 }
 
 If($null -ne $response){
-    $shiftcodelines = ((((($response -match '<figure class="wp-block-table"><table><thead><tr><th>SHiFT Code') -split '</tr>') -match '<tr><td><strong>') -split '</thead><tbody>') -match '.*([A-Z0-9]+-){3}[A-Z0-9]+.*') -replace "<strong><strong>","<strong>" -replace '&nbsp;' -replace "`n" -replace "`r"
+    $shiftcodelines = ((((($response -match '<figure class="wp-block-table"><table><thead><tr><th>SHiFT Code')[0] -split '</tr>') -match '<tr><td><strong>') -split '</thead><tbody>') -match '.*([A-Z0-9]+-){3}[A-Z0-9]+.*') -replace "<strong><strong>","<strong>" -replace '&nbsp;' -replace "`n" -replace "`r"
 
     ForEach($shiftcodeline in $shiftcodelines){
 
         If($shiftcodeline -ne ""){
-            $Expiration = (((((($ShiftCodeLine -split "</strong>")[-1]) -split "</td><td>")[3] -replace "</td>") -replace "sept","september") -split '(st|nd|rd|th)')[0]
+            $Expiration = ((((((($ShiftCodeLine -split "</strong>")[-1]) -split "</td><td>")[-1] -replace "</td>") -replace "jan","january" -replace "feb","february" -replace "mar","march" -replace "apr","april" -replace "jun","june" -replace "jul","july" -replace "aug","august" -replace "sept","september" -replace "oct","october" -replace "nov","november" -replace "dec","december") -split '(st|nd|rd|th)')[0]).replace('.','')
+            if(((((((($ShiftCodeLine -split "</strong>")[-1]) -split "</td><td>")[-1] -replace "</td>") -replace "jan","january" -replace "feb","february" -replace "mar","march" -replace "apr","april" -replace "jun","june" -replace "jul","july" -replace "aug","august" -replace "sept","september" -replace "oct","october" -replace "nov","november" -replace "dec","december") -split '(st|nd|rd|th)')[-1]).replace('.','') -match ', 20[0-9][0-9]'){
+                $Expiration = $expiration + ((((((($ShiftCodeLine -split "</strong>")[-1]) -split "</td><td>")[-1] -replace "</td>") -replace "jan","january" -replace "feb","february" -replace "mar","march" -replace "apr","april" -replace "jun","june" -replace "jul","july" -replace "aug","august" -replace "sept","september" -replace "oct","october" -replace "nov","november" -replace "dec","december") -split '(st|nd|rd|th)')[-1]).replace('.','') -replace ","
+            }
             If($Expiration -ne ''){
                 $Expiration = Get-Date($Expiration) -Format MM/dd/yyyy
             }
@@ -130,7 +133,7 @@ If($null -ne $response){
                     [PSCustomObject]@{
                         Added = Get-Date -Format MM/dd/yyyy
                         SHiFTCode = $code.trim()
-                        Reward =  (((($ShiftCodeLine -split "</strong>")[-1]) -split "</td><td>")[1]) -replace "<br>", " "
+                        Reward =  (((($ShiftCodeLine -split "</strong>")[-1]) -split "</td><td>")[1]) -replace "<br>", " " -replace "&#8217;","'" -replace "&#8220;","'" -replace "&#8221;","'"
                         Expiration = $Expiration
                         Source = "thegamepost.com"
                     }
