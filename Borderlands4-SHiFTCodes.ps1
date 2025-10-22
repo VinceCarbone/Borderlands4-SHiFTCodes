@@ -40,13 +40,13 @@ Try{
 }
 
 If($null -ne $response){
-    $shiftcodelines = ((($response -split "`n") -like "*reward*expire date*") -split "<strong>") -replace '</td><td class="has-text-align-left" data-align="left">'
+    $shiftcodelines = (((($response -split "`n") -like "*reward*expire date*") -split "<strong>") -replace '</td><td class="has-text-align-left" data-align="left">') -match $pattern
     $i = 0
     ForEach($line in $shiftcodelines){        
         If($line -match $pattern){
             
-            Try{                
-                $Expiration = get-date(((((($line -split "</strong>")[1] -split "<code>")[0]) -split ";")[-1] -replace "expires: ") -replace "jan","january" -replace "feb","february" -replace "mar","march" -replace "apr","april" -replace "jun","june" -replace "jul","july" -replace "aug","august" -replace "sept","september" -replace "oct","october" -replace "nov","november" -replace "dec","december") -ErrorAction Stop -format MM/dd/yyyy
+            Try{               
+                $Expiration = get-date(($line -replace '</tr><tr><td class="has-text-align-left" data-align="left">','' -replace "jan","january" -replace "feb","february" -replace "mar","march" -replace "apr","april" -replace "jun","june" -replace "jul","july" -replace "aug","august" -replace "sept","september" -replace "oct","october" -replace "nov","november" -replace "dec","december" -split "</strong>" -split "<code>" -split "</code>" -split "</td>")[3])
             } catch {
                 $Expiration = ''
             }
