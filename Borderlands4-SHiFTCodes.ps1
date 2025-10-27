@@ -46,7 +46,7 @@ If($null -ne $response){
         If($line -match $pattern){
             
             Try{               
-                $Expiration = get-date(($line -replace '</tr><tr><td class="has-text-align-left" data-align="left">','' -replace "jan","january" -replace "feb","february" -replace "mar","march" -replace "apr","april" -replace "jun","june" -replace "jul","july" -replace "aug","august" -replace "sept","september" -replace "oct","october" -replace "nov","november" -replace "dec","december" -split "</strong>" -split "<code>" -split "</code>" -split "</td>")[3])
+                $Expiration = get-date(($line -replace '</tr><tr><td class="has-text-align-left" data-align="left">','' -replace "jan","january" -replace "feb","february" -replace "mar","march" -replace "apr","april" -replace "jun","june" -replace "jul","july" -replace "aug","august" -replace "sept","september" -replace "oct","october" -replace "nov","november" -replace "dec","december" -split "</strong>" -split "<code>" -split "</code>" -split "</td>")[3]) -format MM/dd/yyyy
             } catch {
                 $Expiration = ''
             }
