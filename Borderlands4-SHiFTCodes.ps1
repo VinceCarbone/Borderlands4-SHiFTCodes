@@ -175,6 +175,7 @@ ForEach($code in $output){
 }
 
 #$ValidCodes = $ValidCodes |  Where-Object {$_.expiration -gt ((get-date).adddays(-2)) -or $_.expiration -eq ''} | Sort-Object added, expiration -Descending
+$date = get-date -Format yyyyMMddhhmmss
 $ValidCodes = $ValidCodes |  Sort-Object added, expiration -Descending
 
 if ($ExportCSV){
@@ -183,19 +184,24 @@ if ($ExportCSV){
             $ValidCodes | Export-Csv -Path "$PSScriptRoot\Borderlands4 SHiFT Codes.csv" -NoTypeInformation -Force
 
             if ($null -ne $DiscordWebhook){
-                Start-Transcript -Path "..\transcript.txt"
-                write-host "Sending $($newcodes.count) new codes to $DiscordWebhook"
-                ForEach($NewCode in $NewCodes){
+                Start-Transcript -Path "..\$date-transcript.txt"
+                if($newcodes.count -le 3){
+                    write-host "Sending $($newcodes.count) new codes to $DiscordWebhook"
+                    ForEach($NewCode in $NewCodes){
 
 $DiscordMessage = @"
 $($NewCode.SHiFTCode)
 "@            
-                    $payload = [PSCustomObject]@{content = $DiscordMessage}                
-                    Try{
-                        Invoke-RestMethod -Uri "$DiscordWebhook" -Method Post -Body ($payload | ConvertTo-Json) -ContentType 'Application/Json' -ErrorAction Stop
-                    } catch {
-                        Write-Host "Failed to send to Discord webhook"
+                        $payload = [PSCustomObject]@{content = $DiscordMessage}                
+                        Try{
+                            Invoke-RestMethod -Uri "$DiscordWebhook" -Method Post -Body ($payload | ConvertTo-Json) -ContentType 'Application/Json' -ErrorAction Stop
+                        } catch {
+                            Write-Host "Failed to send to Discord webhook"
+                        }
                     }
+                } else {
+                    Write-Host "New code count is greater than 2, please review"
+                    $NewCodes | Format-Table -AutoSize
                 }
                 Stop-Transcript
             }
