@@ -20,14 +20,14 @@ $DiscordMessage = $null
 $pattern = '\b[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}-[A-Z0-9]{5}\b'
 
 if (Test-Path "$PSScriptRoot\Borderlands4 SHiFT Codes.csv"){
-    $CSVImport = Import-Csv "$PSScriptRoot\Borderlands4 SHiFT Codes.csv"
+    $CSVImport = Import-Csv -path "$PSScriptRoot\Borderlands4 SHiFT Codes.csv"
 } else {
     $CSVImport = $null
 }
 
 # expired codes
 if (Test-Path "$PSScriptRoot\ExpiredSHiFTCodes.csv"){
-    $ExpiredCodes = Import-Csv -Path "$PSScriptRoot\ExpiredSHiFTCodes.csv"
+    $ExpiredCodes = Import-Csv "$PSScriptRoot\ExpiredSHiFTCodes.csv"
 } else {
     $ExpiredCodes = $null
 }
@@ -46,7 +46,7 @@ If($null -ne $response){
         If($line -match $pattern){
             
             Try{               
-                $Expiration = get-date(($line -replace '</tr><tr><td class="has-text-align-left" data-align="left">','' -replace "jan","january" -replace "feb","february" -replace "mar","march" -replace "apr","april" -replace "jun","june" -replace "jul","july" -replace "aug","august" -replace "sept","september" -replace "oct","october" -replace "nov","november" -replace "dec","december" -split "</strong>" -split "<code>" -split "</code>" -split "</td>")[3]) -format MM/dd/yyyy
+                $Expiration = get-date(($line -replace '</tr><tr><td class="has-text-align-left" data-align="left">','' -replace "jan","january" -replace "feb","february" -replace "mar","march" -replace "apr","april" -replace "jun","june" -replace "jul","july" -replace "aug","august" -replace "sept","september" -replace "oct","october" -replace "nov","november" -replace "dec","december" -split "</strong>" -split "<code>" -split "</code>" -split "</td>")[3] -replace "<s>" -replace "</s>") -format MM/dd/yyyy
             } catch {
                 $Expiration = ''
             }
@@ -128,7 +128,7 @@ If($null -ne $response){
 
             $code = ($ShiftCodeLine -split "</strong>")[0] -replace "<tr><td><strong>"
 
-            If($ShiftCodes.shiftcode -notcontains $code){
+            If($ShiftCodes.shiftcode -notcontains $code.trim()){
                 $ShiftCodes += @(
                     [PSCustomObject]@{
                         Added = Get-Date -Format MM/dd/yyyy
@@ -140,6 +140,13 @@ If($null -ne $response){
                 )
             }
         }
+    }
+}
+
+# This is here to prevent an issue where for whatever reason a code isn't on the website anymore but is still valid, so it adds the codes from the CSV to the current array if not present
+ForEach($csvCode in $CSVImport){
+    if($shiftcodes.shiftcode -notcontains $csvcode.shiftcode){        
+        $shiftcodes += $csvcode
     }
 }
 
@@ -184,26 +191,32 @@ if ($ExportCSV){
             $ValidCodes | Export-Csv -Path "$PSScriptRoot\Borderlands4 SHiFT Codes.csv" -NoTypeInformation -Force
 
             if ($null -ne $DiscordWebhook){
-                Start-Transcript -Path "..\$date-transcript.txt"
-                if($newcodes.count -le 3){
-                    write-host "Sending $($newcodes.count) new codes to $DiscordWebhook"
-                    ForEach($NewCode in $NewCodes){
+                if($newcodes){
+                    Start-Transcript -Path "..\$date-transcript.txt"
+                    if($newcodes.count -eq 1 ){
+                        write-host "Sending $($newcodes.count) new codes to $DiscordWebhook"
+                        ForEach($NewCode in $NewCodes){
 
 $DiscordMessage = @"
 $($NewCode.SHiFTCode)
 "@            
-                        $payload = [PSCustomObject]@{content = $DiscordMessage}                
-                        Try{
-                            Invoke-RestMethod -Uri "$DiscordWebhook" -Method Post -Body ($payload | ConvertTo-Json) -ContentType 'Application/Json' -ErrorAction Stop
-                        } catch {
-                            Write-Host "Failed to send to Discord webhook"
+                            $payload = [PSCustomObject]@{content = $DiscordMessage}                
+                            Try{
+                                Invoke-RestMethod -Uri "$DiscordWebhook" -Method Post -Body ($payload | ConvertTo-Json) -ContentType 'Application/Json' -ErrorAction Stop
+                            } catch {
+                                Write-Host "Failed to send to Discord webhook"
+                            }
+                        }
+                    } else {
+                        Write-Host "New code count is greater than 2, please review"
+                        ForEach($newcode in $NewCodes){
+                            Write-Host $newcode.shiftcode
+                            Write-Host "Expired codes contains code: $($expiredcodes.shiftcode -contains $newcode.shiftcode)"
+                            Write-Host "Valid codes contains code: $($csvimport.shiftcode -contains $newcode.shiftcode)"
                         }
                     }
-                } else {
-                    Write-Host "New code count is greater than 2, please review"
-                    $NewCodes | Format-Table -AutoSize
+                    Stop-Transcript
                 }
-                Stop-Transcript
             }
 
             if ($git){
