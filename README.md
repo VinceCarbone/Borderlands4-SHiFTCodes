@@ -15,7 +15,7 @@ This script will scrape the interweb for SHiFT codes. It checks a few different 
 <br>If you specify a webhook, the script will automatically send any new SHiFT codes (codes that aren't present in the CSV file yet) to your Discord server. Right now it only sends the actual code, no other details (no reward info, no expiration, etc). This is so that it's easier to copy/paste. If you specify this parameter without also using the `-ExportCSV` parameter, it will be ignored. The idea here is to run this as a scheduled task and have it run on a regular basis automatically. Here's a quick example
 <br>
 ```
-.\Borderlands4-SHiFTCodes.ps1 -ExportCSV -DiscordWebhook 'https://discordapp.com/api/webhooks/[some value]/[some other value]'
+.\Borderlands4-SHiFTCodes.ps1 -ExportCSV -DiscordWebhook "https://discordapp.com/api/webhooks/[some value]/[some other value]"
 ```
 <br>
 
